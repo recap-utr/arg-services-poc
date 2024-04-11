@@ -1,0 +1,63 @@
+services:
+  nlp:
+    image: ghcr.io/recap-utr/nlp-service:latest
+    ports:
+      - "50100:50100"
+    tty: true
+  arguebase:
+    image: ghcr.io/recap-utr/arguebuf-python:latest
+    command:
+      - server
+      - start
+      - "0.0.0.0:50051"
+      - "--basepath=/data"
+    volumes:
+      - ./data:/data
+    ports:
+      - "50051:50051"
+  cbr-retrieval:
+    build:
+      context: .
+      dockerfile: cbr-retrieval.Dockerfile
+    ports:
+      - "50200:50200"
+    depends_on:
+      - nlp
+    command:
+      - "--address=0.0.0.0:50200"
+      - "--nlp-address=nlp:50100"
+  cbr-adaptation:
+    build:
+      context: .
+      dockerfile: cbr-adaptation.Dockerfile
+    ports:
+      - "50300:50300"
+    depends_on:
+      - nlp
+    command:
+      - "--address=0.0.0.0:50300"
+      - "--nlp-address=nlp:50100"
+  mining:
+    build:
+      context: .
+      dockerfile: mining.Dockerfile
+    ports:
+      - "50500:50500"
+    env_file:
+      - .env
+  ranking:
+    build:
+      context: .
+      dockerfile: ranking.Dockerfile
+    ports:
+      - "50902:50902"
+    env_file:
+      - .env
+  quality:
+    build:
+      context: .
+      dockerfile: quality.Dockerfile
+    ports:
+      - "50901:50901"
+    env_file:
+      - .env
